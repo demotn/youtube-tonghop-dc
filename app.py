@@ -23,6 +23,9 @@ YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 FIREBASE_SERVICE_ACCOUNT_JSON = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
 FIRESTORE_DATABASE_ID = os.environ.get("FIRESTORE_DATABASE_ID", "youtube-search-tool")
 
+CHANNELS_COLLECTION = os.environ.get("CHANNELS_COLLECTION", "tonghop_dc_channels")
+VIDEOS_COLLECTION = os.environ.get("VIDEOS_COLLECTION", "tonghop_dc_videos")
+
 if not YOUTUBE_API_KEY:
     st.error("Thiếu YOUTUBE_API_KEY trong Environment Variables.")
     st.stop()
@@ -149,7 +152,7 @@ def resolve_channel(channel_url):
 
 
 def get_all_imported_channels():
-    docs = db.collection("channels").stream()
+    docs = db.collection(CHANNELS_COLLECTION).stream()
     channels = []
 
     for doc in docs:
@@ -161,7 +164,7 @@ def get_all_imported_channels():
 
 
 def channel_exists(channel_id):
-    doc = db.collection("channels").document(channel_id).get()
+    doc = db.collection(CHANNELS_COLLECTION).document(channel_id).get()
     return doc.exists
 
 
@@ -171,13 +174,13 @@ def save_channel(channel_data):
         **channel_data,
         "imported_at": now_iso(),
     }
-    db.collection("channels").document(channel_id).set(payload)
+    db.collection(CHANNELS_COLLECTION).document(channel_id).set(payload)
 
 
 def delete_channel_and_videos(channel_id):
-    db.collection("channels").document(channel_id).delete()
+    db.collection(CHANNELS_COLLECTION).document(channel_id).delete()
 
-    videos = db.collection("videos").where("channel_id", "==", channel_id).stream()
+    videos = db.collection(VIDEOS_COLLECTION).where("channel_id", "==", channel_id).stream()
     batch = db.batch()
     count = 0
 
@@ -259,7 +262,7 @@ def save_videos_to_firestore(videos):
     count = 0
 
     for video in videos:
-        ref = db.collection("videos").document(video["video_id"])
+        ref = db.collection(VIDEOS_COLLECTION).document(video["video_id"])
         batch.set(ref, video)
         count += 1
 
@@ -295,7 +298,7 @@ def refresh_all_videos():
 
 
 def get_all_videos():
-    docs = db.collection("videos").stream()
+    docs = db.collection(VIDEOS_COLLECTION).stream()
     videos = []
 
     for doc in docs:
